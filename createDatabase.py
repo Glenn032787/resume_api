@@ -149,4 +149,61 @@ for transcript in transcriptData:
     conn.execute(insert_cmd)
 
 
+### Publication
+tableName = "publication"
+conn.execute(f"DROP TABLE IF EXISTS {tableName}")
+
+publicationCol = [
+    "id INTEGER PRIMARY KEY AUTOINCREMENT",
+    "title VARCHAR",
+    "journal VARCHAR",
+    "doi VARCHAR UNIQUE",
+    "date DATETIME",
+    "status VARCHAR"
+]
+
+create_table_cmd = f"CREATE TABLE {tableName} ({','.join(publicationCol)})"
+conn.execute(create_table_cmd)
+
+publicationData = [
+    "1, 'The genome sequence of the Loggerhead sea turtle, Caretta caretta Linnaeus 1758', 'F1000 Research', 'https://doi.org/10.12688/f1000research.131283.2', date('2023-06-27'), 'published'",
+    "2, 'IMPALA: A Comprehensive Pipeline for Detecting and Elucidating Mechanisms of Allele Specific Expression in Cancer', 'Bioinformatics', 'https://doi.org/10.1101/2023.09.11.555771', date('2023-09-12'), 'preprint'",
+    "3, 'Oxford Nanopore long-read sequencing of an advanced cancer cohort resolves rearrangements, detangles haplotypes, and reveals methylation landscapes', 'Nature Cancer', NULL, NULL, 'draft'",
+]
+
+
+for publication in publicationData:
+    insert_cmd = f"INSERT INTO {tableName} VALUES ({publication})"
+    conn.execute(insert_cmd)
+
+### Work
+tableName = "work"
+conn.execute(f"DROP TABLE IF EXISTS {tableName}")
+
+workCol = [
+    "id INTEGER PRIMARY KEY AUTOINCREMENT",
+    "jobTitle VARCHAR",
+    "company VARCHAR",
+    "location VARCHAR",
+    "startDate DATETIME",
+    "endDate DATETIME"
+]
+
+create_table_cmd = f"CREATE TABLE {tableName} ({','.join(workCol)})"
+conn.execute(create_table_cmd)
+
+workData = [
+    "1, 'Master Bioinformatic Analyst', 'Michael Smith Genome Sciences Centre', 'Vancouver, BC', date('2021-09-01'), date('2024-01-01')",
+    "2, 'Teaching Assistant', 'Masters of Data Science (UBC)', 'Vancouver, BC', date('2022-01-01'), date('2023-04-01')",
+    "3, 'Undergraduate Medical Image Analyst', 'AK Wong Lab (UBC)', 'Toronto, ON', date('2020-04-01'), date('2021-04-01')",
+    "4, 'Senior Circulation Desk Assistant', 'EJ Pratt Library (UBC)', 'Toronto, ON', date('2018-09-01'), date('2020-09-01')",
+    "5, 'Research Assistant', 'Laboratory of Neurological Disease (HKU)', 'Hong Kong', date('2018-04-01'), date('2018-09-01')",
+    "6, 'Primary School Tutor', 'Great Glory Education Center', 'Hong Kong', date('2016-04-01'), date('2017-09-01')"
+]
+
+for work in workData:
+    insert_cmd = f"INSERT INTO {tableName} VALUES ({work})"
+    conn.execute(insert_cmd)
+
+
 conn.commit()
