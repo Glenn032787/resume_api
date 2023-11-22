@@ -17,11 +17,12 @@ class Education(db.Model):
     def __repr__(self):
         return f'<{self.university}>'
 
-class EducationSchema(ma.Schema):
+class EducationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         fields = ("id", "university", "location", "degree", "startDate", "endDate", "gpa")
         model = Education
-
+        include_fk = True
+    
 education_schema = EducationSchema()
 education_multischema = EducationSchema(many = True)
 
@@ -38,10 +39,11 @@ class Email(db.Model):
     def __repr__(self):
         return f'<Email: {self.type}>'
 
-class EmailSchema(ma.Schema):
+class EmailSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         fields = ("id", "emailType", "email")
         model = Email
+        include_fk = True
 
 email_schema = EmailSchema()
 email_multischema = EmailSchema(many = True)
@@ -59,10 +61,11 @@ class Link(db.Model):
     def __repr__(self):
         return f"<Link: {self.linkType}>"
 
-class LinkSchema(ma.Schema):
+class LinkSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         fields = ("id", "linkType", "link")
         model = Link
+        include_fk = True
 
 link_schema = LinkSchema()
 link_multischema = LinkSchema(many = True)
@@ -83,10 +86,11 @@ class Transcript(db.Model):
     def __repr__(self):
         return f"<Transcript: {self.courseCode}>"
 
-class TranscriptSchema(ma.Schema):
+class TranscriptSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         fields = ("id", "school", "courseCode", "courseTitle", "grade", "semester")
         model = Transcript
+        include_fk = True
 
 transcript_schema = TranscriptSchema()
 transcript_multischema = TranscriptSchema(many = True)
@@ -106,10 +110,11 @@ class Publication(db.Model):
     def __repr__(self):
         return f"<Publication: {self.journal}>"
 
-class PublicationSchema(ma.Schema):
+class PublicationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         fields = ("id", "title", "journal", "doi", "date", "status")
         model = Publication
+        include_fk = True
 
 publication_schema = PublicationSchema()
 publication_multischema = PublicationSchema(many = True)
@@ -129,10 +134,11 @@ class Work(db.Model):
     def __repr__(self):
         return f"<Work: self.jobTitle>"
 
-class WorkSchema(ma.Schema):
+class WorkSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         fields = ("id", "jobTitle", "company", "location", "startDate", "endDate")
         model = Work
+        include_fk = True
 
 work_schema = WorkSchema()
 work_multischema = WorkSchema(many = True)
