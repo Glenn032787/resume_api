@@ -293,12 +293,12 @@ class LinkListAll(MethodResource, Resource):
     @use_kwargs(
         {
             'linkType': fields.String(required = True), 
-            'link': fields.URL(required = True)
+            'link': fields.URL(required = True, relative = True, require_tld = True, example="http://example.com")
         }, 
         location=('json'),
         description = "Link object that needs to be added to the resume"
     )
-    def post(self):
+    def post(self, **kwargs):
         newLink = Link(
             linkType = request.json['linkType'],
             link = request.json['link']
@@ -306,7 +306,7 @@ class LinkListAll(MethodResource, Resource):
 
         db.session.add(newLink)
         db.session.commit()
-        return link_schema(newLink), 200        
+        return link_schema.dump(newLink), 200        
 
 class LinkFilterId(MethodResource, Resource):
     @doc(
