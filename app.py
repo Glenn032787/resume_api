@@ -36,7 +36,10 @@ class EducationListAll(MethodResource, Resource):
         summary='Get all education date', 
         tags=['Education']
     )
-    @marshal_with(EducationSchema(many=True))
+    @marshal_with(
+        EducationSchema(many=True), 
+        description="Success", 
+        code = 200)
     def get(self):
         schools = Education.query.all()
         return education_multischema.dump(schools)
@@ -47,7 +50,10 @@ class EducationListAll(MethodResource, Resource):
         tags=['Education'],
     )
     @use_kwargs(EducationSchema(), location=('json'))
-    @marshal_with(EducationSchema(), code = 200, description="Create new entry for school")
+    @marshal_with(
+        EducationSchema(), 
+        code = 200, 
+        description="Successfully added new Education object")
     def post(self, **kwargs):
         newSchool = Education(
             university = request.json['university'],
@@ -73,9 +79,13 @@ class EducationFilterID(MethodResource, Resource):
             }
         }
     )
+    @marshal_with(
+        EducationSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, educationID):
         school = Education.query.get_or_404(educationID)
-        return education_schema.dump(school)
+        return education_schema.dump(school), 200
     
     @doc(
         description='### Delete education date based on ID', 
@@ -87,6 +97,10 @@ class EducationFilterID(MethodResource, Resource):
             }
         }
     )
+    @marshal_with( 
+        ma.SQLAlchemyAutoSchema(),
+        description="Successfully deleted education object", 
+        code = 204)
     def delete(self, educationID):
         school = Education.query.get_or_404(educationID)
         db.session.delete(school)
@@ -104,11 +118,15 @@ class EducationFilterLocation(MethodResource, Resource):
             }
         }
     )
+    @marshal_with(
+        EducationSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, location):
         school = db.session.execute(
             db.select(Education).filter_by(location = location)
         ).scalars()
-        return education_multischema.dump(school)
+        return education_multischema.dump(school), 200
 
 class EducationFilterDate(MethodResource, Resource):
     @doc(
@@ -122,12 +140,16 @@ class EducationFilterDate(MethodResource, Resource):
         summary='Filter education with date',
         tags=['Education']
     )
+    @marshal_with(
+        EducationSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, date):
         date = datetime.strptime(date, '%Y%m%d').strftime("%Y-%m-%d")
         school = db.session.execute(
             db.select(Education).filter(sql.func.date(Education.startDate) <= sql.func.date(date)).filter(sql.func.date(Education.endDate) >= sql.func.date(date))
         ).scalar()
-        return education_schema.dump(school)
+        return education_schema.dump(school), 200
 
 
 api.add_resource(EducationListAll, '/api/education')
