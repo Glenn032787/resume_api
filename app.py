@@ -195,7 +195,8 @@ class EmailListAll(MethodResource, Resource):
             'email': fields.Email(required = True)
         }, 
         location=('json'),
-        description = "Email object that needs to be added to the resume")
+        description = "Email object that needs to be added to the resume"
+        )
     def post(self, **kwargs):
         newEmail = Email(
             emailType = request.json['emailType'],
@@ -266,11 +267,37 @@ docs.register(EmailFilterType)
 
 
 ## Link
-class LinkListAll(Resource):
+class LinkListAll(MethodResource, Resource):
+    @doc(
+        description='### Output all link data in resume', 
+        summary="Get all link data",
+        tags=['Link']
+    )
+    @marshal_with(
+        LinkSchema(many = True), 
+        description="Success", 
+        code = 200)
     def get(self):
         links = Link.query.all()
-        return link_multischema.dump(links)
+        return link_multischema.dump(links), 200
     
+    @doc(
+        description='### Create new link entry', 
+        summary="Create new link entry",
+        tags=['Link']
+    )
+    @marshal_with(
+        LinkSchema(), 
+        description="Success", 
+        code = 200)
+    @use_kwargs(
+        {
+            'linkType': fields.String(required = True), 
+            'link': fields.URL(required = True)
+        }, 
+        location=('json'),
+        description = "Link object that needs to be added to the resume"
+    )
     def post(self):
         newLink = Link(
             linkType = request.json['linkType'],
@@ -279,29 +306,59 @@ class LinkListAll(Resource):
 
         db.session.add(newLink)
         db.session.commit()
-        return link_schema(newLink)        
+        return link_schema(newLink), 200        
 
-class LinkFilterId(Resource):
+class LinkFilterId(MethodResource, Resource):
+    @doc(
+        description='### Filter link data based on link ID', 
+        summary="Get link using ID",
+        tags=['Link']
+    )
+    @marshal_with(
+        LinkSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, LinkId):
         link = Link.query.get_or_404(LinkId)
-        return link_schema(link)
+        return link_schema(link), 200
     
+    @doc(
+        description='### Delete link data based on link ID', 
+        summary="Delete link entry",
+        tags=['Link']
+    )
+    @marshal_with(
+        ma.SQLAlchemyAutoSchema(), 
+        description="Success", 
+        code = 200)
     def delete(self, LinkId):
         link = Link.query.get_or_404(LinkId)
         db.session.delete(link)
         db.session.commit()
         return '', 204
 
-class LinkFilterType(Resource):
+class LinkFilterType(MethodResource, Resource):
+    @doc(
+        description='### Filer link data based on link type', 
+        summary="Filter by link type",
+        tags=['Link']
+    )
+    @marshal_with(
+        LinkSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, linkType):
         link = db.session.execute(
             db.select(Link).filter(Link.linkType == linkType)
         ).scalar()
-        return link_schema.dump(link)
+        return link_schema.dump(link), 200
 
 api.add_resource(LinkListAll, "/api/link")
 api.add_resource(LinkFilterId, "/api/link/<int:LinkId>")
 api.add_resource(LinkFilterType, "/api/link/<string:linkType>")
+docs.register(LinkListAll)
+docs.register(LinkFilterId)
+docs.register(LinkFilterType)
 
 # Transcript
 class TranscriptListAll(Resource):
