@@ -5,51 +5,123 @@ from datetime import datetime
 from model import *
 from database import app, db, ma
 from sqlalchemy import sql
+from apispec import APISpec
+from flask_apispec.views import MethodResource
+from apispec.ext.marshmallow import MarshmallowPlugin
+from flask_apispec.extension import FlaskApiSpec
+from flask_apispec import doc, use_kwargs, marshal_with
+from marshmallow import Schema, fields
+from flask_marshmallow import Marshmallow
 
 
 api = Api(app)
 
-class EducationListAll(Resource):
+##### DOCUMENTATION (using swasgger)
+app.config.update({
+    'APISPEC_SPEC': APISpec(
+        title='Glenn Resume API',
+        version='v1',
+        plugins=[MarshmallowPlugin()],
+        openapi_version='2.0.0'
+    ),
+    'APISPEC_SWAGGER_URL': '/api/doc/json/',  # URI to access API Doc JSON 
+    'APISPEC_SWAGGER_UI_URL': '/api/doc/'  # URI to access UI of API Doc
+})
+docs = FlaskApiSpec(app)
+
+### Education
+class EducationListAll(MethodResource, Resource):
+    @doc(
+        description="### Output all education data in resume", 
+        summary='Get all education date', 
+        tags=['Education']
+    )
+    @marshal_with(EducationSchema(many=True))
     def get(self):
         schools = Education.query.all()
         return education_multischema.dump(schools)
-    
-    def post(self):
-        startDate = datetime.strptime(request.json["startDate"], '%Y%m%d').strftime("%Y-%m-%d")
-        endDate = datetime.strptime(request.json["endDate"], '%Y%m%d').strftime("%Y-%m-%d")
 
+    @doc(
+        description="### Create a new education entry in resume", 
+        summary='Create education entry', 
+        tags=['Education'],
+    )
+    @use_kwargs(EducationSchema(), location=('json'))
+    @marshal_with(EducationSchema(), code = 200, description="Create new entry for school")
+    def post(self, **kwargs):
         newSchool = Education(
             university = request.json['university'],
             location = request.json['location'],
             degree = request.json['degree'],
-            startDate = sql.func.date(startDate),
-            endDate = sql.func.date(endDate),
+            startDate = sql.func.date(request.json["startDate"]),
+            endDate = sql.func.date(request.json["endDate"]),
             gpa = request.json['gpa']
         )
 
         db.session.add(newSchool)
         db.session.commit()
-        return education_schema.dump(newSchool)
-    
-class EducationFilterID(Resource):
+        return education_schema.dump(newSchool), 200
+
+class EducationFilterID(MethodResource, Resource):
+    @doc(
+        description='### Filter Education data based on Education ID', 
+        summary = 'Get education using ID', 
+        tags=['Education'],
+        params={'educationID': 
+            {
+                'description': 'The ID for the education entry'
+            }
+        }
+    )
     def get(self, educationID):
         school = Education.query.get_or_404(educationID)
         return education_schema.dump(school)
     
+    @doc(
+        description='### Delete education date based on ID', 
+        summary = 'Delete education entry', 
+        tags=['Education'],
+        params={'educationID': 
+            {
+                'description': 'The ID for the education entry'
+            }
+        }
+    )
     def delete(self, educationID):
         school = Education.query.get_or_404(educationID)
         db.session.delete(school)
         db.session.commit()
         return '', 204
 
-class EducationFilterLocation(Resource):
+class EducationFilterLocation(MethodResource, Resource):
+    @doc(
+        description='### Get education date based on location', 
+        summary ="Filter education with location", 
+        tags=['Education'],
+        params={'location': 
+            {
+                'description': 'Location of school'
+            }
+        }
+    )
     def get(self, location):
         school = db.session.execute(
             db.select(Education).filter_by(location = location)
-        ).scalar()
-        return education_schema.dump(school)
+        ).scalars()
+        return education_multischema.dump(school)
 
-class EducationFilterDate(Resource):
+class EducationFilterDate(MethodResource, Resource):
+    @doc(
+        description='### Return the school where enrollment occurred on the specified date.',
+        params={'date': 
+            {
+                'description': 'Date of entrollment (format: YYYYMMDD)',
+                'example': '20220402'
+            }
+        },
+        summary='Filter education with date',
+        tags=['Education']
+    )
     def get(self, date):
         date = datetime.strptime(date, '%Y%m%d').strftime("%Y-%m-%d")
         school = db.session.execute(
@@ -62,16 +134,38 @@ api.add_resource(EducationListAll, '/api/education')
 api.add_resource(EducationFilterID, '/api/education/<int:educationID>')
 api.add_resource(EducationFilterLocation, '/api/education/location/<string:location>')
 api.add_resource(EducationFilterDate, '/api/education/date/<string:date>')
+docs.register(EducationListAll)
+docs.register(EducationFilterID)
+docs.register(EducationFilterLocation)
+docs.register(EducationFilterDate)
 
 
 ## Email
-class EmailListAll(Resource):
+class EmailRequestSchema(Schema):
+    emailType = fields.String(required=True, description="Email type")
+    email = fields.Email(required=True, description="Email")
+    
+    
+
+class EmailListAll(MethodResource, Resource):
+    @doc(
+        description='### Output all email data in resume', 
+        summary="Get all email data",
+        tags=['Email']
+    )
     def get(self):
         emails = Email.query.all()
         return email_multischema.dump(emails)
 
-    def post(self):
-
+    @doc(
+        description='### Create new email entry', 
+        summary = "Create new email entry",
+        tags=['Email']
+    )
+    @use_kwargs(
+        EmailRequestSchema, 
+        description = "Email object that needs to be added to the resume")
+    def post(self, **kwargs):
         newEmail = Email(
             emailType = request.json['emailType'],
             email = request.json['email']
@@ -81,7 +175,7 @@ class EmailListAll(Resource):
         db.session.commit()
         return email_schema.dump(newEmail)
 
-class EmailFilterID(Resource):
+class EmailFilterID(MethodResource, Resource):
     def get(self, emailId):
         email = Email.query.get_or_404(emailId)
         return email_schema.dump(email)
@@ -92,7 +186,7 @@ class EmailFilterID(Resource):
         db.commit()
         return '', 204
 
-class EmailFilterType(Resource):
+class EmailFilterType(MethodResource, Resource):
     def get(self, emailType):
         email = db.session.execute(
             db.select(Email).filter(Email.emailType == emailType)
@@ -103,6 +197,7 @@ class EmailFilterType(Resource):
 api.add_resource(EmailListAll, '/api/email')
 api.add_resource(EmailFilterID, '/api/email/<int:emailId>')
 api.add_resource(EmailFilterType, '/api/email/<string:emailType>')
+docs.register(EmailListAll)
 
 ## Link
 class LinkListAll(Resource):
@@ -298,6 +393,8 @@ api.add_resource(WorkFilterDate, "/api/work/date/<string:date>")
 @app.route("/")
 def home():
     return 
+
+
 
 
 if __name__ == "__main__":
