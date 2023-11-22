@@ -1,6 +1,6 @@
 from flask import Flask, request 
 from flask_sqlalchemy import SQLAlchemy
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, fields
 from datetime import datetime
 from model import *
 from database import app, db, ma
@@ -12,6 +12,7 @@ from flask_apispec.extension import FlaskApiSpec
 from flask_apispec import doc, use_kwargs, marshal_with
 from marshmallow import Schema, fields
 from flask_marshmallow import Marshmallow
+
 
 
 api = Api(app)
@@ -163,63 +164,106 @@ docs.register(EducationFilterDate)
 
 
 ## Email
-class EmailRequestSchema(Schema):
-    emailType = fields.String(required=True, description="Email type")
-    email = fields.Email(required=True, description="Email")
-    
-    
-
 class EmailListAll(MethodResource, Resource):
     @doc(
         description='### Output all email data in resume', 
         summary="Get all email data",
         tags=['Email']
     )
+    @marshal_with(
+        EmailSchema(many = True), 
+        description="Success", 
+        code = 200)
     def get(self):
         emails = Email.query.all()
         return email_multischema.dump(emails)
+
+
 
     @doc(
         description='### Create new email entry', 
         summary = "Create new email entry",
         tags=['Email']
     )
+    @marshal_with(
+        EmailSchema(), 
+        description="Success", 
+        code = 200)
     @use_kwargs(
-        EmailRequestSchema, 
+        {
+            'emailType': fields.String(required = True), 
+            'email': fields.Email(required = True)
+        }, 
+        location=('json'),
         description = "Email object that needs to be added to the resume")
     def post(self, **kwargs):
         newEmail = Email(
             emailType = request.json['emailType'],
             email = request.json['email']
         )
-        
         db.session.add(newEmail)
         db.session.commit()
         return email_schema.dump(newEmail)
 
 class EmailFilterID(MethodResource, Resource):
+    @doc(
+        description='### Filter email data based on Education ID', 
+        summary = "Get email using ID",
+        tags=['Email']
+    )
+    @marshal_with(
+        EmailSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, emailId):
         email = Email.query.get_or_404(emailId)
-        return email_schema.dump(email)
+        return email_schema.dump(email), 200
     
+    @doc(
+        description='### Delete email date based on ID', 
+        summary = "Delete email entry",
+        tags=['Email']
+    )
+    @marshal_with(
+        ma.SQLAlchemyAutoSchema, 
+        description="Successfully delete entry", 
+        code = 204)
     def delete(self, emailId):
         email = Email.query.get_or_404(emailId)
         db.session.delete(email)
-        db.commit()
+        db.session.commit()
         return '', 204
 
 class EmailFilterType(MethodResource, Resource):
+    @doc(
+        description='### Filter email data based on email type', 
+        summary = "Get email using email type",
+        tags=['Email'],
+        params={'emailType': 
+            {
+                'description': 'Type of email',
+                'example': 'Personal'
+            }
+        }
+    )
+    @marshal_with(
+        EmailSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, emailType):
         email = db.session.execute(
             db.select(Email).filter(Email.emailType == emailType)
         ).scalar()
 
-        return email_schema.dump(email)
+        return email_schema.dump(email), 200
 
 api.add_resource(EmailListAll, '/api/email')
 api.add_resource(EmailFilterID, '/api/email/<int:emailId>')
 api.add_resource(EmailFilterType, '/api/email/<string:emailType>')
 docs.register(EmailListAll)
+docs.register(EmailFilterID)
+docs.register(EmailFilterType)
+
 
 ## Link
 class LinkListAll(Resource):
