@@ -37,13 +37,19 @@ class Email(db.Model):
     email = db.Column(db.String, unique=True)
 
     def __repr__(self):
-        return f'<Email: {self.type}>'
+        return f'<Email: {self.emailType}>'
 
-class EmailSchema(ma.SQLAlchemyAutoSchema):
+class EmailSchema(ma.SQLAlchemySchema):
     class Meta:
         fields = ("id", "emailType", "email")
         model = Email
         include_fk = True
+        load_instance = True,
+        sqla_session = db.session
+
+    id = ma.auto_field()
+    emailType = ma.auto_field()
+    email = ma.auto_field()
 
 email_schema = EmailSchema()
 email_multischema = EmailSchema(many = True)
