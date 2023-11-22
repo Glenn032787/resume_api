@@ -298,7 +298,7 @@ class LinkListAll(MethodResource, Resource):
         location=('json'),
         description = "Link object that needs to be added to the resume"
     )
-    def post(self, **kwargs):
+    def post(self, linkType, link):
         newLink = Link(
             linkType = request.json['linkType'],
             link = request.json['link']
@@ -361,19 +361,42 @@ docs.register(LinkFilterId)
 docs.register(LinkFilterType)
 
 # Transcript
-class TranscriptListAll(Resource):
+class TranscriptListAll(MethodResource, Resource):
+
+    @doc(
+        description='### Output all link transcript in resume', 
+        summary="Get all transcript data",
+        tags=['Transcript']
+    )
+    @marshal_with(
+        TranscriptSchema(many = True), 
+        description="Success", 
+        code = 200)
     def get(self):
         transcripts = Transcript.query.all()
         return transcript_multischema.dump(transcripts)
     
-    id = db.Column(db.Integer, primary_key = True)
-    school = db.Column(db.Integer, db.ForeignKey(Education.id))
-    courseCode = db.Column(db.String, unique = True)
-    courseTitle = db.Column(db.String)
-    grade = db.Column(db.Integer)
-    semester = db.Column(db.Integer)
-
-    def post(self):
+    @doc(
+        description='### Create new transcript entry', 
+        summary="Create new transcript entry",
+        tags=['Link']
+    )
+    @marshal_with(
+        TranscriptSchema(), 
+        description="Success", 
+        code = 200)
+    @use_kwargs(
+        {
+            'school': fields.String(required = True), 
+            'courseCode': fields.String(required = True),
+            'courseTitle': fields.String(required = True), 
+            'grade': fields.Number(required = True), 
+            'semester': fields.Number(required = True), 
+        }, 
+        location=('json'),
+        description = "Link object that needs to be added to the resume"
+    )
+    def post(self, **kwargs):
         newTranscript = Transcript(
             school = request.json['school'],
             courseCode = request.json['courseCode'],
@@ -384,34 +407,79 @@ class TranscriptListAll(Resource):
 
         db.session.add(newTranscript)
         db.session.commit()
-        return transcript_schema(newTranscript)        
+        return transcript_schema.dump(newTranscript)        
 
-class TranscriptFilterId(Resource):
+class TranscriptFilterId(MethodResource, Resource):
+    @doc(
+        description='### Filter based on transcript ID', 
+        summary="Get transcript using ID",
+        tags=['Transcript']
+    )
+    @marshal_with(
+        TranscriptSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, transcriptID):
         transcript = Transcript.query.get_or_404(transcriptID)
         return transcript_schema(transcript)
     
+    @doc(
+        description='### Delete transcript data based on transcript ID', 
+        summary="Delete transcript entry",
+        tags=['Transcript']
+    )
+    @marshal_with(
+        ma.SQLAlchemyAutoSchema(),
+        description="Success", 
+        code = 200)
     def delete(self, transcriptID):
         transcript = Transcript.query.get_or_404(transcriptID)
         db.session.delete(transcript)
         db.session.commit()
         return '', 204
 
-class TranscriptFilterSchool(Resource):
+class TranscriptFilterSchool(MethodResource, Resource):
+    @doc(
+        description='### Filter transcripts based on school ID', 
+        summary="Get transcript from specific school",
+        tags=['Transcript']
+    )
+    @marshal_with(
+        TranscriptSchema(many = True), 
+        description="Success", 
+        code = 200)
     def get(self, schoolID):
         transcripts = db.session.execute(
             db.select(Transcript).filter(Transcript.school == schoolID)
         ).scalars()
         return transcript_multischema.dump(transcripts)
 
-class TranscriptFilterSchoolSemester(Resource):
+class TranscriptFilterSchoolSemester(MethodResource, Resource):
+    @doc(
+        description='### Filter transcripts based on school ID and semester number', 
+        summary="Get transcript from specific school and semseter",
+        tags=['Transcript']
+    )
+    @marshal_with(
+        TranscriptSchema(many = True), 
+        description="Success", 
+        code = 200)
     def get(self, schoolID, semester):
         transcripts = db.session.execute(
             db.select(Transcript).filter(Transcript.school == schoolID).filter(Transcript.semester == semester)
         ).scalars()
         return transcript_multischema.dump(transcripts)
 
-class TranscriptFilterCourseCode(Resource):
+class TranscriptFilterCourseCode(MethodResource, Resource):
+    @doc(
+        description='### Filter transcripts based on course code', 
+        summary="Get transcript for specific course",
+        tags=['Transcript']
+    )
+    @marshal_with(
+        TranscriptSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, courseCode):
         transcript = db.session.execute(
             db.select(Transcript).filter(Transcript.courseCode == courseCode)
