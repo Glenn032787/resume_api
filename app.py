@@ -210,7 +210,12 @@ class EmailFilterID(MethodResource, Resource):
     @doc(
         description='### Filter email data based on Education ID', 
         summary = "Get email using ID",
-        tags=['Email']
+        tags=['Email'],
+        params={'emailID': 
+            {
+                'description': 'The ID for the email entry'
+            }
+        }
     )
     @marshal_with(
         EmailSchema(), 
@@ -223,7 +228,12 @@ class EmailFilterID(MethodResource, Resource):
     @doc(
         description='### Delete email date based on ID', 
         summary = "Delete email entry",
-        tags=['Email']
+        tags=['Email'],
+        params={'emailID': 
+            {
+                'description': 'The ID for the email entry'
+            }
+        }
     )
     @marshal_with(
         ma.SQLAlchemyAutoSchema, 
@@ -312,7 +322,12 @@ class LinkFilterId(MethodResource, Resource):
     @doc(
         description='### Filter link data based on link ID', 
         summary="Get link using ID",
-        tags=['Link']
+        tags=['Link'],
+        params={'LinkID': 
+            {
+                'description': 'The ID for the link entry'
+            }
+        }
     )
     @marshal_with(
         LinkSchema(), 
@@ -325,7 +340,12 @@ class LinkFilterId(MethodResource, Resource):
     @doc(
         description='### Delete link data based on link ID', 
         summary="Delete link entry",
-        tags=['Link']
+        tags=['Link'],
+        params={'LinkID': 
+            {
+                'description': 'The ID for the link entry'
+            }
+        }
     )
     @marshal_with(
         ma.SQLAlchemyAutoSchema(), 
@@ -341,7 +361,13 @@ class LinkFilterType(MethodResource, Resource):
     @doc(
         description='### Filer link data based on link type', 
         summary="Filter by link type",
-        tags=['Link']
+        tags=['Link'],
+        params={'linkType': 
+            {
+                'description': 'The name of the link',
+                'default': "github"
+            }
+        }
     )
     @marshal_with(
         LinkSchema(), 
@@ -362,7 +388,6 @@ docs.register(LinkFilterType)
 
 # Transcript
 class TranscriptListAll(MethodResource, Resource):
-
     @doc(
         description='### Output all link transcript in resume', 
         summary="Get all transcript data",
@@ -379,7 +404,7 @@ class TranscriptListAll(MethodResource, Resource):
     @doc(
         description='### Create new transcript entry', 
         summary="Create new transcript entry",
-        tags=['Link']
+        tags=['Transcript']
     )
     @marshal_with(
         TranscriptSchema(), 
@@ -387,11 +412,11 @@ class TranscriptListAll(MethodResource, Resource):
         code = 200)
     @use_kwargs(
         {
-            'school': fields.String(required = True), 
+            'school': fields.Number(required = True), 
             'courseCode': fields.String(required = True),
             'courseTitle': fields.String(required = True), 
             'grade': fields.Number(required = True), 
-            'semester': fields.Number(required = True), 
+            'semester': fields.Number(required = True)
         }, 
         location=('json'),
         description = "Link object that needs to be added to the resume"
@@ -404,16 +429,22 @@ class TranscriptListAll(MethodResource, Resource):
             grade = request.json['grade'],
             semester = request.json['semester']
         )
-
         db.session.add(newTranscript)
         db.session.commit()
-        return transcript_schema.dump(newTranscript)        
+        return transcript_schema.dump(newTranscript)    
+    
+       
 
 class TranscriptFilterId(MethodResource, Resource):
     @doc(
         description='### Filter based on transcript ID', 
         summary="Get transcript using ID",
-        tags=['Transcript']
+        tags=['Transcript'],
+        params={'transcriptID': 
+            {
+                'description': 'The ID for the transcript entry'
+            }
+        }
     )
     @marshal_with(
         TranscriptSchema(), 
@@ -421,12 +452,17 @@ class TranscriptFilterId(MethodResource, Resource):
         code = 200)
     def get(self, transcriptID):
         transcript = Transcript.query.get_or_404(transcriptID)
-        return transcript_schema(transcript)
+        return transcript_schema.dump(transcript)
     
     @doc(
         description='### Delete transcript data based on transcript ID', 
         summary="Delete transcript entry",
-        tags=['Transcript']
+        tags=['Transcript'],
+        params={'transcriptID': 
+            {
+                'description': 'The ID for the transcript entry'
+            }
+        }
     )
     @marshal_with(
         ma.SQLAlchemyAutoSchema(),
@@ -442,7 +478,12 @@ class TranscriptFilterSchool(MethodResource, Resource):
     @doc(
         description='### Filter transcripts based on school ID', 
         summary="Get transcript from specific school",
-        tags=['Transcript']
+        tags=['Transcript'],
+        params={'schoolID': 
+            {
+                'description': 'The foreign key for the school ID'
+            }
+        }
     )
     @marshal_with(
         TranscriptSchema(many = True), 
@@ -452,13 +493,23 @@ class TranscriptFilterSchool(MethodResource, Resource):
         transcripts = db.session.execute(
             db.select(Transcript).filter(Transcript.school == schoolID)
         ).scalars()
+
         return transcript_multischema.dump(transcripts)
 
 class TranscriptFilterSchoolSemester(MethodResource, Resource):
     @doc(
         description='### Filter transcripts based on school ID and semester number', 
         summary="Get transcript from specific school and semseter",
-        tags=['Transcript']
+        tags=['Transcript'],
+        params={'schoolID': 
+            {
+                'description': 'The foreign key for the school ID'
+            },
+            "semester":  
+            {
+                'description': 'The semester number for that school'
+            }
+        }
     )
     @marshal_with(
         TranscriptSchema(many = True), 
@@ -474,7 +525,12 @@ class TranscriptFilterCourseCode(MethodResource, Resource):
     @doc(
         description='### Filter transcripts based on course code', 
         summary="Get transcript for specific course",
-        tags=['Transcript']
+        tags=['Transcript'],
+        params={'courseCode': 
+            {
+                'description': 'Course code for that course'
+            }
+        }
     )
     @marshal_with(
         TranscriptSchema(), 
@@ -491,6 +547,11 @@ api.add_resource(TranscriptFilterId, "/api/transcript/<int:transcriptID>")
 api.add_resource(TranscriptFilterSchool, "/api/transcript/school/<int:schoolID>")
 api.add_resource(TranscriptFilterSchoolSemester, "/api/transcript/school/<int:schoolID>_<int:semester>")
 api.add_resource(TranscriptFilterCourseCode, "/api/transcript/courseCode/<string:courseCode>")
+docs.register(TranscriptListAll)
+docs.register(TranscriptFilterId)
+docs.register(TranscriptFilterSchool)
+docs.register(TranscriptFilterSchoolSemester)
+docs.register(TranscriptFilterCourseCode)
 
 # Publication
 class PublicationListAll(Resource):
