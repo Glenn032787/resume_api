@@ -433,8 +433,6 @@ class TranscriptListAll(MethodResource, Resource):
         db.session.commit()
         return transcript_schema.dump(newTranscript)    
     
-       
-
 class TranscriptFilterId(MethodResource, Resource):
     @doc(
         description='### Filter based on transcript ID', 
@@ -554,18 +552,46 @@ docs.register(TranscriptFilterSchoolSemester)
 docs.register(TranscriptFilterCourseCode)
 
 # Publication
-class PublicationListAll(Resource):
+class PublicationListAll(MethodResource, Resource):
+    @doc(
+        description='### Output all publication data in resume', 
+        summary="Get all publication data",
+        tags=['Publication']
+    )
+    @marshal_with(
+        PublicationSchema(many = True), 
+        description="Success", 
+        code = 200)
     def get(self):
         publications = Publication.query.all()
         return publication_multischema.dump(publications)
 
-    def post(self):
-        date = datetime.strptime(request.json['date'], '%Y%m%d').strftime("%Y-%m-%d")
+    @doc(
+        description='### Create new publication entry', 
+        summary="Create new publication entry",
+        tags=['Publication']
+    )
+    @marshal_with(
+        PublicationSchema(), 
+        description="Success", 
+        code = 200)
+    @use_kwargs(
+        {
+            'title': fields.String(required = True), 
+            'journal': fields.String(required = True), 
+            'doi': fields.String(required = True), 
+            'status': fields.String(required = True), 
+            'date': fields.Date(format="%Y-%m-%d", required = True), 
+        }, 
+        location=('json'),
+        description = "Publication object that needs to be added to the resume"
+    )
+    def post(self, **kwargs):
         newPublication = Publication(
             title = request.json['title'],
             journal = request.json['journal'],
             doi = request.json['doi'],
-            date = sql.func.date(date) ,
+            date = sql.func.date(request.json['date']) ,
             status = request.json['status'],
         )
 
@@ -573,18 +599,60 @@ class PublicationListAll(Resource):
         db.commit()
         return publication_schema.dump(newPublication)
 
-class PublicationFilterID(Resource):
+class PublicationFilterID(MethodResource, Resource):
+    @doc(
+        description='### Filter publication data based on ID', 
+        summary="Get publication using ID",
+        tags=['Publication'], 
+        params={'publcationID': 
+            {
+                'description': 'The ID for the publication object'
+            }
+        }
+    )
+    @marshal_with(
+        PublicationSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, publicationID):
         publication = Publication.query.get_or_404(publicationID)
         return publication_schema.dump(publication)
 
+    @doc(
+        description='### Delete publication with ID', 
+        summary="Delete publication with ID",
+        tags=['Publication'], 
+        params={'publcationID': 
+            {
+                'description': 'The ID for the publication object'
+            }
+        }
+    )
+    @marshal_with(
+        ma.SQLAlchemyAutoSchema(), 
+        description="Success", 
+        code = 200)
     def delete(self, publicationID):
         publication = Publication.query.get_or_404(publicationID)
         db.session.delete(publication)
         db.commit()
         return '', 204
 
-class PublicationFilterStatus(Resource):
+class PublicationFilterStatus(MethodResource, Resource):
+    @doc(
+        description='### Filter publication based on publication status', 
+        summary="Filter publication with status",
+        tags=['Publication'], 
+        params={'status': 
+            {
+                'description': 'The status of publcation (published, preprint& draft)'
+            }
+        }
+    )
+    @marshal_with(
+        PublicationSchema(many = True),
+        description="Success", 
+        code = 200)
     def get(self, status):
         publications = db.session.execute(
             db.select(Publication).filter(Publication.status == status)
@@ -595,6 +663,9 @@ class PublicationFilterStatus(Resource):
 api.add_resource(PublicationListAll, "/api/publication")
 api.add_resource(PublicationFilterID, "/api/publication/<int:publicationID>")
 api.add_resource(PublicationFilterStatus, "/api/publication/<string:status>")
+docs.register(PublicationListAll)
+docs.register(PublicationFilterID)
+docs.register(PublicationFilterStatus)
 
 # Work
 class WorkListAll(Resource):
