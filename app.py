@@ -16,19 +16,27 @@ from flask_marshmallow import Marshmallow
 
 
 api = Api(app)
-
-##### DOCUMENTATION (using swasgger)
-app.config.update({
-    'APISPEC_SPEC': APISpec(
+apiSpec = APISpec(
         title='Glenn Resume API',
         version='v1',
         plugins=[MarshmallowPlugin()],
         openapi_version='2.0.0'
-    ),
+    )
+##### DOCUMENTATION (using swasgger)
+app.config.update({
+    'APISPEC_SPEC': apiSpec,
     'APISPEC_SWAGGER_URL': '/api/doc/json/',  # URI to access API Doc JSON 
     'APISPEC_SWAGGER_UI_URL': '/api/doc/'  # URI to access UI of API Doc
 })
 docs = FlaskApiSpec(app)
+# Tag info
+apiSpec.tag({'name': 'Education', 'description': 'Api endpoint for academic history'})
+apiSpec.tag({'name': 'Email', 'description': 'Api endpoint to get emails'})
+apiSpec.tag({'name': 'Transcript', 'description': 'Api endpoint for transcript'})
+apiSpec.tag({'name': 'Link', 'description': 'Api endpoint for links and socials'})
+apiSpec.tag({'name': 'Publication', 'description': 'Api endpoint for all publication and academic papers'})
+apiSpec.tag({'name': 'Work', 'description': 'Api endpoint for all professional work experiences'})
+
 
 ### Education
 class EducationListAll(MethodResource, Resource):
@@ -38,7 +46,7 @@ class EducationListAll(MethodResource, Resource):
         tags=['Education']
     )
     @marshal_with(
-        EducationSchema(many=True), 
+        EducationResponseSchema(many=True), 
         description="Success", 
         code = 200)
     def get(self):
@@ -50,9 +58,17 @@ class EducationListAll(MethodResource, Resource):
         summary='Create education entry', 
         tags=['Education'],
     )
-    @use_kwargs(EducationSchema(), location=('json'))
+    @use_kwargs(
+        {
+            "university": fields.Str(),
+            "location": fields.Str(),
+            "degree": fields.Str(),
+            "startDate": fields.Date(format = '%Y-%m-%d'),
+            "endDate": fields.Date(format = "%Y-%m-%d"),
+            "gpa": fields.Integer(),
+        }, location=('json'))
     @marshal_with(
-        EducationSchema(), 
+        EducationResponseSchema(), 
         code = 200, 
         description="Successfully added new Education object")
     def post(self, **kwargs):
@@ -81,7 +97,7 @@ class EducationFilterID(MethodResource, Resource):
         }
     )
     @marshal_with(
-        EducationSchema(), 
+        EducationResponseSchema(), 
         description="Success", 
         code = 200)
     def get(self, educationID):
@@ -120,7 +136,7 @@ class EducationFilterLocation(MethodResource, Resource):
         }
     )
     @marshal_with(
-        EducationSchema(), 
+        EducationResponseSchema(), 
         description="Success", 
         code = 200)
     def get(self, location):
@@ -142,7 +158,7 @@ class EducationFilterDate(MethodResource, Resource):
         tags=['Education']
     )
     @marshal_with(
-        EducationSchema(), 
+        EducationResponseSchema(), 
         description="Success", 
         code = 200)
     def get(self, date):
@@ -192,7 +208,8 @@ class EmailListAll(MethodResource, Resource):
     @use_kwargs(
         {
             'emailType': fields.String(required = True), 
-            'email': fields.Email(required = True)
+            'email': fields.Email(required = True),
+            'id': fields.Integer()
         }, 
         location=('json'),
         description = "Email object that needs to be added to the resume"
@@ -579,7 +596,7 @@ class PublicationListAll(MethodResource, Resource):
         {
             'title': fields.String(required = True), 
             'journal': fields.String(required = True), 
-            'doi': fields.String(required = True), 
+            'doi': fields.URL(required = True, example = "https://doi.org"), 
             'status': fields.String(required = True), 
             'date': fields.Date(format="%Y-%m-%d", required = True), 
         }, 

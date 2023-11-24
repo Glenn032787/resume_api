@@ -1,5 +1,6 @@
 from database import db, ma, app
-
+from marshmallow import fields
+from datetime import datetime
 #######
 # Education
 #######
@@ -17,14 +18,19 @@ class Education(db.Model):
     def __repr__(self):
         return f'<{self.university}>'
 
-class EducationSchema(ma.SQLAlchemyAutoSchema):
+class EducationResponseSchema(ma.SQLAlchemySchema):
+   
+    startDate = fields.Str(example = "2017-01-09")
+    endDate = fields.Str(example = "2023-09-01")
+
     class Meta:
         fields = ("id", "university", "location", "degree", "startDate", "endDate", "gpa")
         model = Education
         include_fk = True
+        #datetimeformat = '%Y-%m-%d'
     
-education_schema = EducationSchema()
-education_multischema = EducationSchema(many = True)
+education_schema = EducationResponseSchema()
+education_multischema = EducationResponseSchema(many = True)
 
 #######
 # Email
@@ -39,17 +45,18 @@ class Email(db.Model):
     def __repr__(self):
         return f'<Email: {self.emailType}>'
 
-class EmailSchema(ma.SQLAlchemySchema):
+class EmailSchema(ma.Schema):
     class Meta:
         fields = ("id", "emailType", "email")
         model = Email
         include_fk = True
         load_instance = True,
         sqla_session = db.session
-
-    id = ma.auto_field()
-    emailType = ma.auto_field()
-    email = ma.auto_field()
+        
+    emailType: fields.String(required = True)
+    email: fields.Email(required = True)
+    id: fields.Integer()
+    
 
 email_schema = EmailSchema()
 email_multischema = EmailSchema(many = True)
@@ -122,6 +129,10 @@ class PublicationSchema(ma.SQLAlchemyAutoSchema):
         model = Publication
         include_fk = True
 
+    doi = fields.Url()
+    date = fields.Str(example = "2017-01-09")
+
+
 publication_schema = PublicationSchema()
 publication_multischema = PublicationSchema(many = True)
 
@@ -145,6 +156,9 @@ class WorkSchema(ma.SQLAlchemyAutoSchema):
         fields = ("id", "jobTitle", "company", "location", "startDate", "endDate")
         model = Work
         include_fk = True
+    
+    startDate = fields.Str(example = "2017-01-09")
+    endDate = fields.Str(example = "2017-01-09")
 
 work_schema = WorkSchema()
 work_multischema = WorkSchema(many = True)
