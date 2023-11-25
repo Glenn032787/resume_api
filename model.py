@@ -18,7 +18,7 @@ class Education(db.Model):
     def __repr__(self):
         return f'<{self.university}>'
 
-class EducationResponseSchema(ma.SQLAlchemySchema):
+class EducationResponseSchema(ma.SQLAlchemyAutoSchema):
    
     startDate = fields.Str(example = "2017-01-09")
     endDate = fields.Str(example = "2023-09-01")
@@ -152,13 +152,13 @@ class Work(db.Model):
         return f"<Work: self.jobTitle>"
 
 class WorkSchema(ma.SQLAlchemyAutoSchema):
+    startDate = fields.Str(example = "2017-01-09")
+    endDate = fields.Str(example = "2017-01-09")
     class Meta:
         fields = ("id", "jobTitle", "company", "location", "startDate", "endDate")
         model = Work
         include_fk = True
     
-    startDate = fields.Str(example = "2017-01-09")
-    endDate = fields.Str(example = "2017-01-09")
 
 work_schema = WorkSchema()
 work_multischema = WorkSchema(many = True)

@@ -685,39 +685,101 @@ docs.register(PublicationFilterID)
 docs.register(PublicationFilterStatus)
 
 # Work
-class WorkListAll(Resource):
+class WorkListAll(MethodResource, Resource):
+    @doc(
+        tags=['Work'],
+        description = '### Output all work experience data in resume', 
+        summary="Get all work experience",
+    )
+    @marshal_with(WorkSchema(many=True), description="Success", code = 200)
     def get(self):
         work = Work.query.all()
-        return work_multischema.dump(work)
+        return work_multischema.dump(work), 200
 
-    def post(self):
-        startDate = datetime.strptime(request.json["startDate"], '%Y%m%d').strftime("%Y-%m-%d")
-        endDate = datetime.strptime(request.json["endDate"], '%Y%m%d').strftime("%Y-%m-%d")
-
+    @doc(
+        tags=['Work'],
+        description = '### Create new work experience entry', 
+        summary="Create new work experience entry",
+    )
+    @marshal_with(WorkSchema(), description="Success", code = 200)
+    @use_kwargs(
+        {
+            'jobTitle': fields.String(required = True), 
+            'company': fields.String(required = True), 
+            'location': fields.String(required = True), 
+            'startDate': fields.Date(format="%Y-%m-%d", required = True), 
+            'endDate': fields.Date(format="%Y-%m-%d", required = True),
+            'id': fields.Integer(required = False)
+        },
+        location=('json'),
+        description = "Work experience object that needs to be added to the resume"
+    )
+    def post(self, **kwargs):
         newWork = Work(
             jobTitle = request.json["jobTitle"],
             company = request.json["company"],
             location = request.json["location"],
-            startDate = sql.func.date(startDate),
-            endDate = sql.func.date(endDate)
+            startDate = sql.func.date(request.json["startDate"]),
+            endDate = sql.func.date(request.json["endDate"])
         )
-
         db.session.add(newWork)
-        db.commit()
+        db.session.commit()
         return work_schema.dump(newWork)
 
-class WorkFilterID(Resource):
+class WorkFilterID(MethodResource, Resource):
+    @doc(
+        description='### Filter work experience with ID', 
+        summary="Filter work experience with ID",
+        tags=['Work'], 
+        params={'workID': 
+            {
+                'description': 'The ID for the work experience object'
+            }
+        }
+    )
+    @marshal_with(
+        WorkSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, workID):
         work = Work.query.get_or_404(workID)
         return work_schema.dump(work)
     
+    @doc(
+        description='### Delete work experience with ID', 
+        summary="Delete work experience",
+        tags=['Work'], 
+        params={'workID': 
+            {
+                'description': 'The ID for the work experience object'
+            }
+        }
+    )
+    @marshal_with(
+        ma.SQLAlchemyAutoSchema(), 
+        description="Succesfully deleted", 
+        code = 204)
     def delete(self, workID):
         work = Work.query.get_or_404(workID)
         db.session.delete(work)
-        db.commit()
+        db.session.commit()
         return '', 204
 
-class WorkFilterDate(Resource):
+class WorkFilterDate(MethodResource, Resource):
+    @doc(
+        description='### Filer the work experience held based on the provided date', 
+        summary="Filter work experience based on date",
+        tags=['Work'], 
+        params={'date': 
+            {
+                'description': 'The date in YYYYMMDD format'
+            }
+        }
+    )
+    @marshal_with(
+        WorkSchema(), 
+        description="Success", 
+        code = 200)
     def get(self, date):
         workDate = datetime.strptime(date, '%Y%m%d').strftime("%Y-%m-%d")
         work = db.session.execute(
@@ -728,7 +790,9 @@ class WorkFilterDate(Resource):
 api.add_resource(WorkListAll, "/api/work")
 api.add_resource(WorkFilterID, "/api/work/<int:workID>")
 api.add_resource(WorkFilterDate, "/api/work/date/<string:date>")
-
+docs.register(WorkListAll)
+docs.register(WorkFilterID)
+docs.register(WorkFilterDate)
 
 @app.route("/")
 def home():
