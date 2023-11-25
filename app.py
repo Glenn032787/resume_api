@@ -136,12 +136,12 @@ class EducationFilterLocation(MethodResource, Resource):
         }
     )
     @marshal_with(
-        EducationResponseSchema(), 
+        EducationResponseSchema(many = True), 
         description="Success", 
         code = 200)
     def get(self, location):
         school = db.session.execute(
-            db.select(Education).filter_by(location = location)
+            db.select(Education).filter(Education.location == location)
         ).scalars()
         return education_multischema.dump(school), 200
 
@@ -352,7 +352,7 @@ class LinkFilterId(MethodResource, Resource):
         code = 200)
     def get(self, LinkId):
         link = Link.query.get_or_404(LinkId)
-        return link_schema(link), 200
+        return link_schema.dump(link), 200
     
     @doc(
         description='### Delete link data based on link ID', 
@@ -367,7 +367,7 @@ class LinkFilterId(MethodResource, Resource):
     @marshal_with(
         ma.SQLAlchemyAutoSchema(), 
         description="Success", 
-        code = 200)
+        code = 204)
     def delete(self, LinkId):
         link = Link.query.get_or_404(LinkId)
         db.session.delete(link)
@@ -482,7 +482,7 @@ class TranscriptFilterId(MethodResource, Resource):
     @marshal_with(
         ma.SQLAlchemyAutoSchema(),
         description="Success", 
-        code = 200)
+        code = 204)
     def delete(self, transcriptID):
         transcript = Transcript.query.get_or_404(transcriptID)
         db.session.delete(transcript)
@@ -613,7 +613,7 @@ class PublicationListAll(MethodResource, Resource):
         )
 
         db.session.add(newPublication)
-        db.commit()
+        db.session.commit()
         return publication_schema.dump(newPublication)
 
 class PublicationFilterID(MethodResource, Resource):
@@ -647,12 +647,12 @@ class PublicationFilterID(MethodResource, Resource):
     )
     @marshal_with(
         ma.SQLAlchemyAutoSchema(), 
-        description="Success", 
-        code = 200)
+        description="Successfully Delete", 
+        code = 204)
     def delete(self, publicationID):
         publication = Publication.query.get_or_404(publicationID)
         db.session.delete(publication)
-        db.commit()
+        db.session.commit()
         return '', 204
 
 class PublicationFilterStatus(MethodResource, Resource):
@@ -662,7 +662,7 @@ class PublicationFilterStatus(MethodResource, Resource):
         tags=['Publication'], 
         params={'status': 
             {
-                'description': 'The status of publcation (published, preprint& draft)'
+                'description': 'The status of publication (published, preprint& draft)'
             }
         }
     )

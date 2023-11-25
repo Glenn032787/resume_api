@@ -45,7 +45,7 @@ class Email(db.Model):
     def __repr__(self):
         return f'<Email: {self.emailType}>'
 
-class EmailSchema(ma.Schema):
+class EmailSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         fields = ("id", "emailType", "email")
         model = Email
@@ -53,9 +53,9 @@ class EmailSchema(ma.Schema):
         load_instance = True,
         sqla_session = db.session
         
-    emailType: fields.String(required = True)
-    email: fields.Email(required = True)
-    id: fields.Integer()
+    emailType = fields.Str(required = True)
+    email = fields.Email(required = True)
+    id = fields.Integer()
     
 
 email_schema = EmailSchema()
