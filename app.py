@@ -37,9 +37,20 @@ apiSpec.tag({'name': 'Link', 'description': 'Api endpoint for links and socials'
 apiSpec.tag({'name': 'Publication', 'description': 'Api endpoint for all publication and academic papers'})
 apiSpec.tag({'name': 'Work', 'description': 'Api endpoint for all professional work experiences'})
 
+#educationKwargs = {
+#            "university": fields.Str(),
+#            "location": fields.Str(),
+#            "degree": fields.Str(),
+#            "startDate": fields.Date(format = '%Y-%m-%d'),
+#            "endDate": fields.Date(format = "%Y-%m-%d"),
+#            "gpa": fields.Integer(),
+#        }
+
+
 
 ### Education
 class EducationListAll(MethodResource, Resource):
+    
     @doc(
         description="### Output all education data in resume", 
         summary='Get all education date', 
@@ -59,14 +70,8 @@ class EducationListAll(MethodResource, Resource):
         tags=['Education'],
     )
     @use_kwargs(
-        {
-            "university": fields.Str(),
-            "location": fields.Str(),
-            "degree": fields.Str(),
-            "startDate": fields.Date(format = '%Y-%m-%d'),
-            "endDate": fields.Date(format = "%Y-%m-%d"),
-            "gpa": fields.Integer(),
-        }, location=('json'))
+        EducationKwargs(), 
+        location=('json'))
     @marshal_with(
         EducationResponseSchema(), 
         code = 200, 
@@ -206,11 +211,7 @@ class EmailListAll(MethodResource, Resource):
         description="Success", 
         code = 200)
     @use_kwargs(
-        {
-            'emailType': fields.String(required = True), 
-            'email': fields.Email(required = True),
-            'id': fields.Integer()
-        }, 
+        EmailKwargs(), 
         location=('json'),
         description = "Email object that needs to be added to the resume"
         )
@@ -318,10 +319,7 @@ class LinkListAll(MethodResource, Resource):
         description="Success", 
         code = 200)
     @use_kwargs(
-        {
-            'linkType': fields.String(required = True), 
-            'link': fields.URL(required = True, relative = True, require_tld = True, example="http://example.com")
-        }, 
+        LinkKwargs(), 
         location=('json'),
         description = "Link object that needs to be added to the resume"
     )
@@ -428,13 +426,7 @@ class TranscriptListAll(MethodResource, Resource):
         description="Success", 
         code = 200)
     @use_kwargs(
-        {
-            'school': fields.Number(required = True), 
-            'courseCode': fields.String(required = True),
-            'courseTitle': fields.String(required = True), 
-            'grade': fields.Number(required = True), 
-            'semester': fields.Number(required = True)
-        }, 
+        TranscriptKwargs(), 
         location=('json'),
         description = "Link object that needs to be added to the resume"
     )
@@ -593,13 +585,7 @@ class PublicationListAll(MethodResource, Resource):
         description="Success", 
         code = 200)
     @use_kwargs(
-        {
-            'title': fields.String(required = True), 
-            'journal': fields.String(required = True), 
-            'doi': fields.URL(required = True, example = "https://doi.org"), 
-            'status': fields.String(required = True), 
-            'date': fields.Date(format="%Y-%m-%d", required = True), 
-        }, 
+        PublicationKwargs(), 
         location=('json'),
         description = "Publication object that needs to be added to the resume"
     )
@@ -703,14 +689,7 @@ class WorkListAll(MethodResource, Resource):
     )
     @marshal_with(WorkSchema(), description="Success", code = 200)
     @use_kwargs(
-        {
-            'jobTitle': fields.String(required = True), 
-            'company': fields.String(required = True), 
-            'location': fields.String(required = True), 
-            'startDate': fields.Date(format="%Y-%m-%d", required = True), 
-            'endDate': fields.Date(format="%Y-%m-%d", required = True),
-            'id': fields.Integer(required = False)
-        },
+        WorkKwargs(),
         location=('json'),
         description = "Work experience object that needs to be added to the resume"
     )

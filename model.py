@@ -32,6 +32,15 @@ class EducationResponseSchema(ma.SQLAlchemyAutoSchema):
 education_schema = EducationResponseSchema()
 education_multischema = EducationResponseSchema(many = True)
 
+class EducationKwargs(ma.Schema):
+    university = fields.Str()
+    location = fields.Str()
+    degree = fields.Str()
+    startDate = fields.Date(format = '%Y-%m-%d')
+    endDate = fields.Date(format = "%Y-%m-%d")
+    gpa = fields.Integer(),
+    id = fields.Integer(required = False)
+
 #######
 # Email
 #######
@@ -61,6 +70,10 @@ class EmailSchema(ma.SQLAlchemyAutoSchema):
 email_schema = EmailSchema()
 email_multischema = EmailSchema(many = True)
 
+class EmailKwargs(ma.Schema):
+    emailType = fields.String(required = True), 
+    email = fields.Email(required = True),
+    id = fields.Integer(required = False)
 ######
 # Link
 ######
@@ -82,6 +95,11 @@ class LinkSchema(ma.SQLAlchemyAutoSchema):
 
 link_schema = LinkSchema()
 link_multischema = LinkSchema(many = True)
+
+class LinkKwargs(ma.Schema):
+    linkType = fields.String(required = True)
+    link = fields.URL(required = True, relative = True, require_tld = True, example="http://example.com")
+    id = fields.Integer(required = False)
 
 ######
 # Transcript
@@ -107,6 +125,14 @@ class TranscriptSchema(ma.SQLAlchemyAutoSchema):
 
 transcript_schema = TranscriptSchema()
 transcript_multischema = TranscriptSchema(many = True)
+
+class TranscriptKwargs(ma.Schema):
+    school = fields.Number(required = True)
+    courseCode = fields.String(required = True)
+    courseTitle = fields.String(required = True) 
+    grade = fields.Number(required = True)
+    semester = fields.Number(required = True)
+    id = fields.Integer(required = False)
 
 ######
 # Publication
@@ -136,6 +162,14 @@ class PublicationSchema(ma.SQLAlchemyAutoSchema):
 publication_schema = PublicationSchema()
 publication_multischema = PublicationSchema(many = True)
 
+class PublicationKwargs(ma.Schema):
+    title = fields.String(required = True)
+    journal = fields.String(required = True)
+    doi = fields.URL(required = True, example = "https://doi.org")
+    status = fields.String(required = True)
+    date = fields.Date(format="%Y-%m-%d", required = True)
+    id = fields.Integer(required = False)
+
 ######
 # Work
 ######
@@ -162,6 +196,14 @@ class WorkSchema(ma.SQLAlchemyAutoSchema):
 
 work_schema = WorkSchema()
 work_multischema = WorkSchema(many = True)
+
+class WorkKwargs(ma.Schema):
+    jobTitle = fields.String(required = True)
+    company = fields.String(required = True) 
+    location = fields.String(required = True) 
+    startDate = fields.Date(format="%Y-%m-%d", required = True)
+    endDate = fields.Date(format="%Y-%m-%d", required = True)
+    id = fields.Integer(required = False)
 
 with app.app_context():
    db.create_all()
